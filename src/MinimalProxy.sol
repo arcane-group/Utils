@@ -5,7 +5,7 @@ interface IImplementation {
     function initialise() external; 
 }
 
-contract MinimalProxy {
+contract MinimalProxyFactory {
     
     address[] public proxies;
 

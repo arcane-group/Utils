@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
+import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+
 /**
 @notice Mock Implementation contract
 */
 
-contract SimpleNameRegister {
+contract SimpleNameRegister is Ownable {
     
     /// @notice Map a name to an address to identify current holder 
     mapping (string => address) public holder;    
@@ -30,5 +32,12 @@ contract SimpleNameRegister {
         require(holder[name] == msg.sender, "Not your name!");
         delete holder[name];
         emit Release(msg.sender, name);
+    }
+
+    /// @notice To be run on deployment to initialise contract
+    /// @dev Execution within function is subject to implementer's choice
+    /// @param newOwner Adderss of the new owner
+    function initialise(address newOwner) external onlyOwner {
+        transferOwnership(newOwner);
     }
 }

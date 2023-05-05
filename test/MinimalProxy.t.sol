@@ -2,13 +2,13 @@
 pragma solidity ^0.8.17;
 
 import "lib/forge-std/src/Test.sol";
-import { MinimalProxy } from "../src/MinimalProxy.sol";
+import { MinimalProxyFactory } from "../src/MinimalProxy.sol";
 import { SimpleNameRegister } from "../test/SimpleRegistry.sol";
 
 abstract contract StateZero is Test {
     address deployer;
 
-    MinimalProxy public minimalProxy;
+    MinimalProxyFactory public minimalProxyFactory;
     SimpleNameRegister public simpleRegistry;
 
     /// @notice Emit event when a name is registered
@@ -24,7 +24,7 @@ abstract contract StateZero is Test {
         simpleRegistry = new SimpleNameRegister();
         //vm.label(simpleRegistry, 'simpleRegistry');
 
-        minimalProxy = new MinimalProxy();
+        minimalProxyFactory = new MinimalProxyFactory();
         //vm.label(minimalProxy, 'minimalProxy');
   
     }
@@ -39,8 +39,8 @@ contract StateZeroTest is StateZero {
 
         uint256 salt = 1234;
 
-        address deployedProxy = minimalProxy.deploy(address(simpleRegistry), salt);       
-        address newGenerated = minimalProxy.getAddress(address(simpleRegistry), salt);
+        address deployedProxy = minimalProxyFactory.deploy(address(simpleRegistry), salt);       
+        address newGenerated = minimalProxyFactory.getAddress(address(simpleRegistry), salt);
 
         assertTrue(deployedProxy == newGenerated);
     }
@@ -52,8 +52,8 @@ contract StateZeroTest is StateZero {
         uint256 salt1 = 1234;
         uint256 salt2 = 4567;
 
-        address deployedProxy = minimalProxy.deploy(address(simpleRegistry), salt1);       
-        address newGenerated = minimalProxy.getAddress(address(simpleRegistry), salt2);
+        address deployedProxy = minimalProxyFactory.deploy(address(simpleRegistry), salt1);       
+        address newGenerated = minimalProxyFactory.getAddress(address(simpleRegistry), salt2);
 
 
         assertTrue(deployedProxy != newGenerated);
@@ -67,7 +67,7 @@ abstract contract StateDeployed is StateZero {
         super.setUp();
 
         uint256 salt = 1234;
-        deployedProxy = minimalProxy.deploy(address(simpleRegistry), salt);       
+        deployedProxy = minimalProxyFactory.deploy(address(simpleRegistry), salt);       
     }
 }
 
