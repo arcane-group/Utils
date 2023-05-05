@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+import "@openzeppelin/contracts/utils/Create2.sol";
+import "@openzeppelin/contracts/cryptography/ECDSA.sol";
+
+contract MinimalProxyFactory {
+    
+    event MinimalProxyCreated(address minimalProxy);
+
+    function getDeploymentAddress(uint256 _salt, address _sender, address _implementation) public view returns (address) {
+        bytes32 salt = _getSalt(_salt, _sender);
+        return
+            Create2.computeAddress(
+                keccak256(abi.encodePacked(salt)),
+                keccak256(getContractCreationCode(_implementation)),
+                address(this)
+            );
+    }
+
+    function deploySignedAndInitialize(uint256 _salt, address _logic, bytes memory _data, bytes memory _signature) public returns (address) {
+        address signer = getSigner(_salt, _logic, _data, _signature);
+        require(signer != address(0), "Invalid signature");
+        address proxyAddress = _deploy(_salt, _logic, signer);
+        emit MinimalProxyCreated(proxyAddress);
+        (bool success,) = proxyAddress.call(_data);
+        require(success);
+        return proxyAddress;
+    }
+
+    function _deploy(uint256 _salt, address _implementation, address _sender) internal returns (address) {
+        bytes32 salt = _getSalt(_salt, _sender);
+        address minimalProxy = Create2.deploy(
+            0,
+            keccak256(abi.encodePacked(salt)),
+            getContractCreationCode(_implementation)
+        );
+        return minimalProxy;
+    }
+
+    function _getContractCreationCode(address logic)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes10 creation = 0x3d602d80600a3d3981f3;
+        bytes10 prefix = 0x363d3d373d3d3d363d73;
+        bytes20 targetBytes = bytes20(logic);
+        bytes15 suffix = 0x5af43d82803e903d91602b57fd5bf3;
+        return abi.encodePacked(creation, prefix, targetBytes, suffix);
+    }
+
+    function getSigner(uint256 _salt, address _logic, bytes memory _data, bytes memory _signature) public view returns (address) {
+        bytes32 msgHash = ECDSA.toEthSignedMessageHash(
+            keccak256(
+            abi.encodePacked(
+                _salt, _logic, _data, address(this)
+            )
+            )
+        );
+        return ECDSA.recover(msgHash, _signature);
+    }
+
+    function _getSalt(uint256 _salt, address _sender) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_salt, _sender));
+    }
+}
