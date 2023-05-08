@@ -9,6 +9,11 @@ import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol
 
 contract SimpleNameRegister is Ownable {
     
+    bool private init;
+
+    error AlreadyInitialised();
+
+    
     /// @notice Map a name to an address to identify current holder 
     mapping (string => address) public holder;    
 
@@ -36,8 +41,15 @@ contract SimpleNameRegister is Ownable {
 
     /// @notice To be run on deployment to initialise contract
     /// @dev Execution within function is subject to implementer's choice
-    /// @param newOwner Adderss of the new owner
+    /// @param newOwner Address of the new owner
     function initialise(address newOwner) external onlyOwner {
+        
+        if (init == true){
+            revert AlreadyInitialised();
+        }
+
+        init = true; 
+
         transferOwnership(newOwner);
     }
 }

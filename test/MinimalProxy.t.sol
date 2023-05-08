@@ -2,11 +2,13 @@
 pragma solidity ^0.8.17;
 
 import "lib/forge-std/src/Test.sol";
-import { MinimalProxyFactory } from "../src/MinimalProxy.sol";
+import "lib/forge-std/src/console.sol";
+import { MinimalProxyFactory } from "../src/MinimalProxyFactory.sol";
 import { SimpleNameRegister } from "../test/SimpleRegistry.sol";
 
 abstract contract StateZero is Test {
     address deployer;
+    address user;
 
     MinimalProxyFactory public minimalProxyFactory;
     SimpleNameRegister public simpleRegistry;
@@ -18,15 +20,20 @@ abstract contract StateZero is Test {
     event Release(address indexed holder, string name);
 
     function setUp() public virtual {
-        deployer = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
-        //vm.label(deployer, 'deployer');
+        deployer = makeAddr('deployer');
+        vm.label(deployer, 'deployer');
 
+        user = makeAddr('user');
+        vm.label(user, 'user');
+
+        vm.startPrank(deployer);
         simpleRegistry = new SimpleNameRegister();
-        //vm.label(simpleRegistry, 'simpleRegistry');
+        vm.label(address(simpleRegistry), 'simpleRegistry');
 
         minimalProxyFactory = new MinimalProxyFactory();
-        //vm.label(minimalProxy, 'minimalProxy');
-  
+        vm.label(address(minimalProxyFactory), 'minimalProxyFactory');
+
+        vm.stopPrank();
     }
 
 }
@@ -76,10 +83,14 @@ contract StateDeployedTest is StateDeployed {
     function testProxyRegister(string memory testString) public {
         
         vm.expectEmit(true, false, false, false);
-        emit Register(address(this), testString);
+        emit Register(user, testString);
+
+        vm.prank(user);
         SimpleNameRegister(deployedProxy).register(testString);
 
-        assertTrue(SimpleNameRegister(deployedProxy).holder(testString) == address(this));
+        assertTrue(SimpleNameRegister(deployedProxy).holder(testString) == user);
+        assertTrue(simpleRegistry.holder(testString) == address(0));
+
     }
 
     function testProxyRelease(string memory testString) public {
@@ -91,7 +102,22 @@ contract StateDeployedTest is StateDeployed {
 
         assertTrue(SimpleNameRegister(deployedProxy).holder(testString) == address(0));
     }
+/*
+    function testInitialise(address someAddress) public {
+        console2.log('Change ownership of Proxy');
 
+        vm.assume(someAddress != address(0));
+
+
+        console.logAddress(simpleRegistry.owner());
+        console2.log(SimpleNameRegister(deployedProxy).owner());
+
+        vm.prank(address(0));
+        SimpleNameRegister(deployedProxy).initialise(someAddress);
+
+        assertTrue(SimpleNameRegister(deployedProxy).owner() == someAddress);
+    }
+*/
 }
 
 // OWNABLE
