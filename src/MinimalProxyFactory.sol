@@ -5,8 +5,6 @@ import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol
 
 contract MinimalProxyFactory is Ownable {
     
-    address[] public proxies;
-
     // EVENTS
     event ProxyCreated(address indexed proxy);
 
@@ -43,9 +41,7 @@ contract MinimalProxyFactory is Ownable {
 
         _initialiseProxy(proxy);
 
-        proxies.push(proxy);
         emit ProxyCreated(proxy);
-
         return proxy;
     }
     
