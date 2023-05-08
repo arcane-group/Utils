@@ -1,31 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-interface IImplementation {
-    function initialise() external; 
-}
+import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract MinimalProxyFactory {
+contract MinimalProxyFactory is Ownable {
     
     address[] public proxies;
 
     // EVENTS
     event ProxyCreated(address indexed proxy);
-    
+
     /// @dev Deploys a new minimal contract via create2
     /// @param implementation Address of Implementation contract
     /// @param salt Random number of choice
     function deploy(address implementation, uint256 salt) external returns (address) {
         
-        // convert the address to 20 bytes
+        // cast address as bytes
         bytes20 implementationBytes = bytes20(implementation);
 
-        // address to assign minimal proxy
+        // minimal proxy address
         address proxy;
 
         assembly {
             
-            // get free memory pointer
+            // free memory pointer
             let pointer := mload(0x40)
         
             // mstore 32 bytes at the start of free memory 
@@ -42,18 +40,36 @@ contract MinimalProxyFactory {
             // create a new contract, send 0 Ether
             proxy := create2(0, pointer, 0x37, salt)
         }
-      
+
+        _initialiseProxy(proxy);
+
         proxies.push(proxy);
         emit ProxyCreated(proxy);
 
         return proxy;
     }
-
-    function init(address proxy) external {
-        // Initialise minimal proxy
-        IImplementation(proxy).initialise();
+    
+    // Initialise minimal proxy
+    function _initialiseProxy(address proxy) internal {
+        bytes memory data = abi.encodeWithSignature("initialise()");
+        (bool success, ) = proxy.call(data);
+        require(success);
     }
 
+    // Transfer owner
+    function changeOwner(address proxy, address newOwner) external onlyOwner {
+        bytes memory data = abi.encodeWithSignature("transferOwnership(address)", newOwner);
+        (bool success, ) = proxy.call(data);
+        require(success);
+    }
+
+    // for execution of generic fn calls
+    function execute(address proxy, bytes calldata data) external onlyOwner returns (bytes memory) {
+        (bool success, bytes memory result) = proxy.call(data);
+        require(success);
+
+        return result;
+    }
 
     /*
     When calculating the deployment address we need to use the creation code for the minimal proxy,

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+//import { Ownable } from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import { OwnableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
 /**
 @notice Mock Implementation contract
 */
 
-contract SimpleNameRegister is Ownable {
+contract SimpleNameRegister is OwnableUpgradeable {
     
     bool private init;
 
     error AlreadyInitialised();
 
-    
     /// @notice Map a name to an address to identify current holder 
     mapping (string => address) public holder;    
 
@@ -41,15 +41,16 @@ contract SimpleNameRegister is Ownable {
 
     /// @notice To be run on deployment to initialise contract
     /// @dev Execution within function is subject to implementer's choice
-    /// @param newOwner Address of the new owner
-    function initialise(address newOwner) external onlyOwner {
-        
+   // /// @param newOwner Address of the new owner
+    function initialise() external initializer {
+        // 
         if (init == true){
             revert AlreadyInitialised();
         }
 
         init = true; 
-
-        transferOwnership(newOwner);
+        __Ownable_init();
     }
+
+
 }

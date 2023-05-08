@@ -101,23 +101,27 @@ contract StateDeployedTest is StateDeployed {
         SimpleNameRegister(deployedProxy).release(testString);
 
         assertTrue(SimpleNameRegister(deployedProxy).holder(testString) == address(0));
+        assertTrue(simpleRegistry.holder(testString) == address(0));
     }
-/*
-    function testInitialise(address someAddress) public {
-        console2.log('Change ownership of Proxy');
 
-        vm.assume(someAddress != address(0));
+    // ownership of master and clone are independent 
+    function testInitialise() public {
+        console2.log('Factory is deployer of proxy, therefore owner');
 
-
-        console.logAddress(simpleRegistry.owner());
-        console2.log(SimpleNameRegister(deployedProxy).owner());
-
-        vm.prank(address(0));
-        SimpleNameRegister(deployedProxy).initialise(someAddress);
-
-        assertTrue(SimpleNameRegister(deployedProxy).owner() == someAddress);
+        assertTrue(SimpleNameRegister(deployedProxy).owner() == address(minimalProxyFactory));
+        assertTrue(simpleRegistry.owner() == address(0));
     }
-*/
+
+    function testChangeOwner(address newOwner) public {
+        console2.log('Deployer of Factory is Master: can enact ownership transfer of proxy');
+
+        vm.prank(deployer);
+        minimalProxyFactory.changeOwner(deployedProxy, newOwner);
+
+        assertTrue(SimpleNameRegister(deployedProxy).owner() == newOwner);
+
+    }
+
 }
 
 // OWNABLE
