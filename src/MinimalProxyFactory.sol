@@ -10,7 +10,7 @@ contract MinimalProxyFactory is Ownable {
 
     /// @dev Deploys a new minimal contract via create2
     /// @param implementation Address of Implementation contract
-    /// @param salt Random number of choice
+    /// @param salt Random number of choice for create2
     function deploy(address implementation, uint256 salt) external returns (address) {
         
         // cast address as bytes
@@ -28,11 +28,9 @@ contract MinimalProxyFactory is Ownable {
             mstore(pointer, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
 
             // overwrite the trailing 0s above with implementation contract's byte address 
-            // add(pointer + 20 bytes) =>  0x14 = 20
             mstore(add(pointer, 0x14), implementationBytes)
            
             // store 32 bytes to memory starting at "clone" + 40 bytes
-            // 0x28 = 40
             mstore(add(pointer, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
 
             // create a new contract, send 0 Ether
@@ -44,22 +42,27 @@ contract MinimalProxyFactory is Ownable {
         emit ProxyCreated(proxy);
         return proxy;
     }
-    
-    // Initialise minimal proxy
+
+    /// @dev Initialise minimal proxy
+    /// @param proxy Address of target minimal proxy for init
     function _initialiseProxy(address proxy) internal {
         bytes memory data = abi.encodeWithSignature("initialise()");
         (bool success, ) = proxy.call(data);
         require(success);
     }
 
-    // Transfer owner
+    /// @dev Transfer ownership
+    /// @param proxy Address of target minimal proxy
+    /// @param newOwner Address of new owner
     function changeOwner(address proxy, address newOwner) external onlyOwner {
         bytes memory data = abi.encodeWithSignature("transferOwnership(address)", newOwner);
         (bool success, ) = proxy.call(data);
         require(success);
     }
 
-    // for execution of generic fn calls
+    /// @dev For execution of generic fn calls
+    /// @param proxy Address of target minimal proxy
+    /// @param data Function selection and requisite arguments
     function execute(address proxy, bytes calldata data) external onlyOwner returns (bytes memory) {
         (bool success, bytes memory result) = proxy.call(data);
         require(success);
@@ -67,14 +70,11 @@ contract MinimalProxyFactory is Ownable {
         return result;
     }
 
-    /*
-    When calculating the deployment address we need to use the creation code for the minimal proxy,
-    not the logic contract that the minimal proxy points to.
-    */
-
     /// @dev Get address of contract to be deployed
     /// @param salt Random number of choice
     /// @param implementation Address of Implementation contract
+    /// Note: When calculating the deployment address we need to use the creation code for the minimal proxy, 
+    //        not the logic contract that the minimal proxy points to
     function getAddress(address implementation, uint256 salt) public view returns (address) {
         //bytes32 salt = keccak256(abi.encodePacked(salt, _sender));
         bytes memory bytecode = getByteCode(implementation);
