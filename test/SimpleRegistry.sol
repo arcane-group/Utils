@@ -40,7 +40,6 @@ contract SimpleNameRegister is OwnableUpgradeable {
 
     /// @notice To be run on deployment to initialise contract
     /// @dev Execution within function is subject to implementer's choice
-   // /// @param newOwner Address of the new owner
     function initialise() external initializer {
         // 
         if (init == true){
