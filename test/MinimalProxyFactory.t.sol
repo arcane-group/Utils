@@ -35,7 +35,6 @@ abstract contract StateZero is Test {
 
         vm.stopPrank();
     }
-
 }
 
 
@@ -121,9 +120,4 @@ contract StateDeployedTest is StateDeployed {
         assertTrue(SimpleNameRegister(deployedProxy).owner() == newOwner);
 
     }
-
 }
-
-// OWNABLE
-// INIT
-
